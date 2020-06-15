@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Setup Background{% endblock %}
+
+{% block body %}
+<p>Change the settings for the display device.</p>
+<form method="post">
+    <div class="form-group">
+        <p>Do you want to allow the device to change Power Settings and Set backgrounds?</p>
+        <div class="form-group">
+            <input type="checkbox" name="allow_xset" id="allow-xset" {% if allow_xset %}checked {% endif %}data-toggle="toggle" data-on="Yes" data-off="No" data-onstyle="success">
+        </div>
+        <p>Do you want to auto-start the Display's View?</p>
+        <div class="form-group">
+            <input type="checkbox" name="allow_autostart" id="allow-autostart" {% if allow_autostart %}checked {% endif %}data-toggle="toggle" data-on="Yes" data-off="No" data-onstyle="success">
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</form>
+{% endblock %}

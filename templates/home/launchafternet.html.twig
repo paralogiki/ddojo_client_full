@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Display Dojo Wait for Network{% endblock %}
+
+{% block body %}
+<p class="text-center">Waiting for network connection to be setup before launching display. If you haven't setup your network please do so now. If you have setup, please wait while it's being established.</p>
+<p class="text-center">
+  Status: Checking <span id="dotdotdot">.<span>
+</p>
+<p class="text-center">
+  <img src="/img/wifi_load.gif" class="img-fluid">
+</p>
+{% endblock %}
+
+{% block pagejs %}
+  {{ parent() }}
+  <script>
+    setTimeout(chkForNetwork, 1000);
+    function chkForNetwork() {
+      $('#dotdotdot').html($('#dotdotdot').html() + '.');
+      if ($('#dotdotdot').html().length > 10) $('#dotdotdot').html('.');
+      $.get('/netchk', function (data) {
+        if (typeof data.netchk !== 'undefined' && data.netchk == 'ok') {
+          window.location = '/launch';
+        } else {
+          setTimeout(chkForNetwork, 1000);
+        }
+      }).fail(function (obj, status, error) {
+        setTimeout(chkForNetwork, 1000);
+      });
+    }
+  </script>
+{% endblock %}

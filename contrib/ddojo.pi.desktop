@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Display Dojo Client
+Icon=/home/pi/ddojo_local/public/img/logo-ddojo-256x256.jpg
+Exec=/home/pi/ddojo_local/scripts/launch.pi.sh
+Terminal=false

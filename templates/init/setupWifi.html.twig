@@ -1,0 +1,91 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Setup WiFi{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col text-center">
+      <p>Scanning for wireless networks <i class="fa fa-spinner fa-spin"></i></p>
+      <div id="network-list">
+      </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="ssidModal" tabindex="-1" role="dialog" aria-labelledby="ssidModalScrollableTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ssidModalScrollableTitle">Input Wifi SSID and Key</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <input class="form-control" type="text" name="network_ssid" id="network-ssid-input" placeholder="Network SSID">
+          </div>
+          <div class="form-group">
+            <input class="form-control" type="text" name="network_key" id="network-key-input" placeholder="Network Key">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="network-connect-btn">Connect</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block pagejs %}
+  {{ parent() }}
+  <script>
+  var _networks = [];
+  var _selectedNetwork = '';
+  setTimeout(runScan, 500);
+
+  $(document).on('click', '.network-ssid', function (e) {
+    e.preventDefault();
+    _selectedNetwork = $(this).data('ssid');
+    $('#network-ssid-input').val(_selectedNetwork);
+    $('#ssidModal').modal('show');
+  })
+
+  $(document).on('click', '#network-connect-btn', function (e) {
+    e.preventDefault();
+    $('#ssidModal').modal('hide');
+  })
+
+  function runScan() {
+      $.get('{{ path('init_scan_wifi') }}', function (data) {
+          if (data.status == 'ok') {
+              console.log(data);
+              _networks = data.networks;
+              updateNetworks();
+              //setTimeout(runScan, 2000);
+          }
+      }, 'json')
+      .fail(function () {
+          initOut('failed due to server error, try again later');
+      });
+  }
+
+  function updateNetworks() {
+    console.log('updateNetworks()');
+    $('#network-list').html('');
+    var html = '';
+    if (_networks.length) {
+      $.each(_networks, function (k, v) {
+        html += '<a href="#" class="network-ssid" style="display: block;" data-ssid="' + v + '">' + v + '</a>';
+      });
+    } else {
+        html += '<p>No wireless networks found.</p>';
+    }
+    $('#network-list').html(html);
+  }
+  </script>
+{% endblock %}

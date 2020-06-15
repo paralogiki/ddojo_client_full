@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Display Dojo Shutdown Client{% endblock %}
+
+{% block body %}
+<p class="text-center">Shutting client down in <span id="inSec">60</span> seconds, please wait.</p>
+<p class="text-center">
+  <i class="fa fa-3x fa-spinner fa-spin"></i>
+</p>
+{% endblock %}
+
+{% block pagejs %}
+  {{ parent() }}
+  <script>
+    function tickTimerDown() {
+      var timeNow = parseInt($('#inSec').html());
+      timeNow--;
+      if (timeNow < 0) timeNow = 0;
+      $('#inSec').html(timeNow);
+    }
+    setInterval(tickTimerDown, 1000);
+  </script>
+{% endblock %}

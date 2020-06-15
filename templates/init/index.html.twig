@@ -1,0 +1,98 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Init{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col text-left">
+        <pre id="initText">Initializing...</pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block pagejs %}
+  {{ parent() }}
+  <script>
+  // resverse order push/pop
+  var _inits = ["checkDisplaySetup", "checkClientVersion", "checkInternet"];
+  var _serverClientVersion = null;
+  setTimeout(runInit, 500);
+  function runInit() {
+      if (!_inits.length) {
+          initOut('\nInit is complete');
+          return;
+      }
+      var _init = _inits.pop();
+      if (_init == "checkDisplaySetup") {
+          checkDisplaySetup();
+      } else if (_init == "checkInternet") {
+          checkInternet();
+      } else if (_init == "checkClientVersion") {
+          checkClientVersion();
+      } else {
+          initOut('\nInit error unknown _init = ' + _init);
+      }
+  }
+
+  function checkDisplaySetup() {
+      // {{ path('init_check_display_setup') }}
+      initOut('\nChecking Display Setup ... ');
+      $.get('{{ path('init_check_display_setup') }}', function (data) {
+          if (data.status == 'ok') {
+              console.log(data);
+              initOut('checked');
+              runInit();
+          } else {
+              initOut(data.message);
+          }
+      }, 'json')
+      .fail(function () {
+          initOut('failed due to server error, try again later');
+      });
+  }
+
+  function checkClientVersion() {
+      // {{ path('init_check_display_setup') }}
+      initOut('\nChecking Client Version ... ');
+      $.get('{{ path('init_check_client_version') }}', function (data) {
+          if (data.status == 'ok') {
+              console.log(data);
+              if (data.version == _serverClientVersion) {
+                initOut('version ' + data.version + ' is current');
+              } else {
+                initOut('version is different, serverVersion = ' + _serverClientVersion + ', installedVersion = ' + data.version);
+              }
+              runInit();
+          } else {
+              initOut(data.message);
+          }
+      }, 'json')
+      .fail(function () {
+          initOut('failed due to server error, try again later');
+      });
+  }
+
+  function checkInternet() {
+      initOut('\nChecking for internet ... ');
+      $.get('{{ path('init_check_internet') }}', function (data) {
+          console.log(data);
+          if (data.status == 'ok') {
+              initOut('checked');
+              _serverClientVersion = data.currentVersion;
+              runInit();
+          } else {
+              initOut(data.message);
+          }
+      }, 'json')
+      .fail(function () {
+          initOut('failed due to server error, try again later');
+      });
+      //setTimeout(runInit, 1500);
+  }
+
+  function initOut(msg, newline) {
+      $('#initText').append(msg);
+  }
+
+  </script>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Setup{% endblock %}
+
+{% block body %}
+{% if is_setup %}
+<p>If you need to update this device's Display ID or API Token, please do so here.</p>
+{% else %}
+<p>Welcome! It seems you are settings up a new device or have re-installed an existing one.</p>
+<p>First we need to enter your Display ID and API token.</p>
+{% endif %}
+<form method="post">
+    <div class="form-group">
+        <div class="form-group">
+          <input type="text" class="form-control" name="display_id" id="display_id" placeholder="Display ID" value="{{ display_id }}">
+        </div>
+        <div class="form-group">
+          <input type="text" class="form-control" name="api_token" id="api_token" placeholder="API Token" value="{{ api_token }}">
+        </div>
+        {% if is_setup %}
+        <a class="btn btn-secondary" href="{{ path('app_home') }}" role="button">Cancel</a>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</form>
+{% endblock %}

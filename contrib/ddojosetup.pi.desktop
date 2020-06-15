@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Link
+Name=Display Dojo Setup
+Icon=/home/pi/ddojo_local/public/img/logo-ddojo-256x256.jpg
+URL=http://localhost:8000

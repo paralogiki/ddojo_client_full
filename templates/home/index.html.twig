@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Display Dojo Device Client{% endblock %}
+
+{% block body %}
+<div class="row my-2">
+    <div class="col text-right">
+        <a name="display-url" id="display-url" class="btn btn-info" href="{{ path('app_launch') }}" role="button"><i class="fas fa-external-link-alt"></i> Launch Display</a>
+    </div>
+</div>
+<div class="example-wrapper">
+    <div class="card">
+        <div class="card-body text-left">
+            <h4 class="card-title">Current Settings</h4>
+            <p class="card-text">
+                <div class="row my-2">
+                    <div class="col-6 col-md-3">
+                        Display ID:
+                    </div>
+                    <div class="col-6 col-md-9">
+                        <strong>{{ device_config.display_id }}</strong>
+                        <a name="edit-display-id" id="edit-display-id" class="btn btn-sm btn-secondary" href="{{ path('app_setup') }}" role="button"><i class="fas fa-edit"></i></a>
+                    </div>
+                </div>
+                <div class="row my-2">
+                    <div class="col-6 col-md-3">
+                        API Token:
+                    </div>
+                    <div class="col-6 col-md-9">
+                        <strong>{{ device_config.api_token }}</strong>
+                        <a name="edit-api-token" id="edit-api-token" class="btn btn-sm btn-secondary" href="{{ path('app_setup') }}" role="button"><i class="fas fa-edit"></i></a>
+                    </div>
+                </div>
+                <a name="change-settings" id="change-settings" class="btn btn-secondary" href="{{ path('app_settings') }}" role="button"><i class="fas fa-cog"></i> Change Settings</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
