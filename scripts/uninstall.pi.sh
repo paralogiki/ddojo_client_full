@@ -1,6 +1,7 @@
 #!/bin/bash
 cd ~
-rm -r .config/ddojo/ ddojo_local/ ddojo_local-*.xz Desktop/ddojo*desktop install.sh 2>/dev/null
+rm -rf ddojo_local/
+rm -r .config/ddojo/ ddojo_local-*.xz Desktop/ddojo*desktop install.sh 2>/dev/null
 # Consider using sed to search replace autostart
 rm -r .config/lxsession/ 2>/dev/null
 pkill -f "127.0.0.1:8000.*ddojo"
