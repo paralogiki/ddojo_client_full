@@ -16,7 +16,26 @@ fi
 # kill any active client local site code
 pkill -f "127.0.0.1:8000.*ddojo"
 # kill all open chromium browsers
-pkill -f -- "$DD_KILL_CHROMIUM_GREP"
+# the -o switch here does oldest which doesnt kill each tab
+# hopefully preventing the crash popup
+pkill -o -f -- "$DD_KILL_CHROMIUM_GREP"
+DD_COUNT_REMAINING_CHROMIUM="`pgrep "$DD_KILL_CHROMIUM_GREP"`"
+if [[ "$DD_COUNT_REMAINING_CHROMIUM" -gt 4 ]]; then
+	DD_LOOP=1
+	while true; do
+		pkill -o -f -- "$DD_KILL_CHROMIUM_GREP"
+		DD_COUNT_REMAINING_CHROMIUM="`pgrep -c "$DD_KILL_CHROMIUM_GREP"`"
+		if [[ "$DD_COUNT_REMAINING_CHROMIUM" -eq 0 ]]; then
+			break;
+		fi
+		DD_LOOP=$((DD_LOOP + 1))
+		if [[ "$DD_LOOP" -gt 5 ]]; then
+			# we tried to kill oldest ones first gotta kill them all now
+			#pkill -f -- "$DD_KILL_CHROMIUM_GREP"
+			break
+		fi
+	done
+fi
 # start local site code
 
 # Change directory to currently directory
