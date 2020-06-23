@@ -19,11 +19,13 @@ pkill -f "127.0.0.1:8000.*ddojo"
 # the -o switch here does oldest which doesnt kill each tab
 # hopefully preventing the crash popup
 pkill -o -f -- "$DD_KILL_CHROMIUM_GREP"
+sleep 2
 DD_COUNT_REMAINING_CHROMIUM="`pgrep -c "$DD_KILL_CHROMIUM_GREP"`"
 if [[ "$DD_COUNT_REMAINING_CHROMIUM" -gt 4 ]]; then
 	DD_LOOP=1
 	while true; do
 		pkill -o -f -- "$DD_KILL_CHROMIUM_GREP"
+		sleep 2
 		DD_COUNT_REMAINING_CHROMIUM="`pgrep -c "$DD_KILL_CHROMIUM_GREP"`"
 		if [[ "$DD_COUNT_REMAINING_CHROMIUM" -eq 0 ]]; then
 			break;
@@ -31,7 +33,7 @@ if [[ "$DD_COUNT_REMAINING_CHROMIUM" -gt 4 ]]; then
 		DD_LOOP=$((DD_LOOP + 1))
 		if [[ "$DD_LOOP" -gt 5 ]]; then
 			# we tried to kill oldest ones first gotta kill them all now
-			#pkill -f -- "$DD_KILL_CHROMIUM_GREP"
+			pkill -f -- "$DD_KILL_CHROMIUM_GREP"
 			break
 		fi
 	done
@@ -56,6 +58,10 @@ fi
 if [ -x /usr/bin/unclutter ]; then
 	/usr/bin/unclutter -idle 1.0 &
 fi
+# clean both user land and ddojo Prefences file to prevent
+# Restore Session popup if crashed
+sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' ~/.config/chromium/Default/Preferences
+sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' ~/.config/ddojochromium/Default/Preferences
 # open display html
 # --disable-web-security requires --user-data-dir
 # --test-type removes the disabled web-security warning
