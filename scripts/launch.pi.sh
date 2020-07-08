@@ -1,4 +1,5 @@
 #!/bin/bash
+export DISPLAY=:0
 if [ ! -r "/etc/os-release" ]; then
 	echo "ERROR: We cannot read from /etc/os-release, unable to continue"
 	exit
@@ -66,7 +67,7 @@ sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' ~/.config/ddojochromium/D
 # --disable-web-security requires --user-data-dir
 # --test-type removes the disabled web-security warning
 # --check-for-update-interval=31536000
-$DD_CHROMIUM --disable-web-security --user-data-dir=/home/pi/.config/ddojochromium --test-type --check-for-update-interval=31536000 --noerrdialogs --start-fullscreen --disable-translate --no-first-run --fast --fast-start --disable-infobars --disable-features=TranslateUI --allow-file-access-from-files --autoplay-policy=no-user-gesture-required --kiosk $URL > /dev/null 2>&1 &
+$DD_CHROMIUM --kiosk --disable-web-security --user-data-dir=/home/pi/.config/ddojochromium --test-type --check-for-update-interval=31536000 --noerrdialogs --start-fullscreen --disable-translate --no-first-run --fast --fast-start --disable-infobars --disable-features=TranslateUI --allow-file-access-from-files --autoplay-policy=no-user-gesture-required $URL > /dev/null 2>&1 &
 
 # Disable screen going black and screen turn off
 xset s noblank
