@@ -35,7 +35,10 @@ if [[ "$DD_COUNT_REMAINING_CHROMIUM" -gt 4 ]]; then
 	done
 fi
 rm -rf ddojo_local/
-rm -r .config/ddojo/ ddojo_local-*.xz Desktop/ddojo*desktop install.sh 2>/dev/null
+rm -r .config/ddojo/ .config/ddojochromium/ ddojo_local-*.xz Desktop/ddojo*desktop install.sh 2>/dev/null
 # Consider using sed to search replace autostart
 rm -r .config/lxsession/ 2>/dev/null
+if [ -f "/etc/cron.d/ddojo" ]; then
+	rm /etc/cron.d/ddojo
+fi
 echo "Uninstall complete"
