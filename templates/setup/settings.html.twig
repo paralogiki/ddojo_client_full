@@ -6,6 +6,10 @@
 <p>Change the settings for the display device.</p>
 <form method="post">
     <div class="form-group">
+        <p>Do you want to auto-update the client every night at midnight?</p>
+        <div class="form-group">
+            <input type="checkbox" name="allow_autoupdate" id="allow-autoupdate" {% if allow_autoupdate %}checked {% endif %}data-toggle="toggle" data-on="Yes" data-off="No" data-onstyle="success">
+        </div>
         <p>Do you want to allow the device to change Power Settings and Set backgrounds?</p>
         <div class="form-group">
             <input type="checkbox" name="allow_xset" id="allow-xset" {% if allow_xset %}checked {% endif %}data-toggle="toggle" data-on="Yes" data-off="No" data-onstyle="success">

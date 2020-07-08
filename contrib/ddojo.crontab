@@ -1,0 +1,2 @@
+MAILTO=""
+0 0 * * * pi /home/pi/ddojo_local/scripts/update.pi.sh

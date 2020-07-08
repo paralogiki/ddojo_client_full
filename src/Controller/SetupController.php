@@ -96,8 +96,12 @@ class SetupController extends AbstractController
             return $this->redirectToRoute('app_setup');
         }
         $config = $this->deviceConfig->getConfig();
+        $allow_autoupdate = 1;
         $allow_xset = 1;
         $allow_autostart = 1;
+        if (isset($config['allow_autoupdate'])) {
+            $allow_autoupdate = $config['allow_autoupdate'];
+        }
         if (isset($config['allow_xset'])) {
             $allow_xset = $config['allow_xset'];
         }
@@ -106,6 +110,27 @@ class SetupController extends AbstractController
         }
         if ($request->isMethod('POST')) {
             $settings_changed = 0;
+            $allow_autoupdate_new_settings = (int)($request->request->get('allow_autoupdate') == 'on' ?? 0);
+            $allow_autoupdate_previous_settings = (int)($config['allow_autoupdate'] ?? 0);
+            $this->deviceConfig->setConfig(['allow_autoupdate' => $allow_autoupdate_new_settings]);
+            if (!isset($config['allow_autoupdate']) || $allow_autoupdate_previous_settings !== $allow_autoupdate_new_settings) {
+              $settings_changed = 1;
+              $crontabEtc = '/etc/cron.d/ddojo';
+              if ($allow_autoupdate_new_settings) {
+                if (!file_exists($crontabEtc)) {
+                  $crontabFile = $this->getParameter('kernel.project_dir') . '/contrib/ddojo.crontab';
+                  if (file_exists($crontabFile)) {
+                    exec('sudo cp ' . $crontabFile . ' ' . $crontabEtc);
+                  }
+                }
+                $this->addFlash('success', 'Auto-Update has been enabled');
+              } else {
+                if (file_exists($crontabEtc)) {
+                  exec('sudo rm ' . $crontabEtc);
+                }
+                $this->addFlash('success', 'Auto-Update has been disabled');
+              }
+            }
             $allow_xset_new_settings = (int)($request->request->get('allow_xset') == 'on' ?? 0);
             $allow_xset_previous_settings = (int)($config['allow_xset'] ?? 0);
             $this->deviceConfig->setConfig(['allow_xset' => $allow_xset_new_settings]);
@@ -149,6 +174,7 @@ class SetupController extends AbstractController
         return $this->render('setup/settings.html.twig', [
             'controller_name' => 'SetupController',
             'display_config' => $this->deviceConfig->getConfig(),
+            'allow_autoupdate' => $allow_autoupdate,
             'allow_xset' => $allow_xset,
             'allow_autostart' => $allow_autostart,
         ]);
