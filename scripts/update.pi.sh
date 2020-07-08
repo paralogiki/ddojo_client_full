@@ -8,9 +8,16 @@ git fetch origin
 
 newUpdatesAvailable=`git diff HEAD FETCH_HEAD`
 if [ "$newUpdatesAvailable" != "" ]; then
+	currentCommitId=`git rev-parse HEAD`
+	rebootAfter=`git log --oneline $currentCommitId..FETCH_HEAD | grep REBOOT | wc -l`
 	git reset --hard origin/master
 	echo "Updates applied"
-	~/ddojo_local/scripts/launch.pi.sh
+	if [ $rebootAfter -eq 1 ]; then
+		echo "Rebooting ..."
+		sudo shutdown -t 0 0 -r
+	else
+		~/ddojo_local/scripts/launch.pi.sh
+	fi
 else
 	echo "No updates found"
 fi
