@@ -16,6 +16,7 @@ if [ "$newUpdatesAvailable" != "" ]; then
 		echo "Rebooting ..."
 		sudo shutdown -t 0 0 -r
 	else
+		~/ddojo_local/bin/console ddojo:migrate
 		~/ddojo_local/scripts/launch.pi.sh
 	fi
 else
