@@ -12,11 +12,11 @@ if [ "$newUpdatesAvailable" != "" ]; then
 	rebootAfter=`git log --oneline $currentCommitId..FETCH_HEAD | grep REBOOT | wc -l`
 	git reset --hard origin/master
 	echo "Updates applied"
+	~/ddojo_local/bin/console ddojo:migrate
 	if [ $rebootAfter -eq 1 ]; then
 		echo "Rebooting ..."
 		sudo shutdown -t 0 0 -r
 	else
-		~/ddojo_local/bin/console ddojo:migrate
 		~/ddojo_local/scripts/launch.pi.sh
 	fi
 else
