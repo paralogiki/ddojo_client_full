@@ -39,6 +39,6 @@ rm -r .config/ddojo/ .config/ddojochromium/ ddojo_local-*.xz Desktop/ddojo*deskt
 # Consider using sed to search replace autostart
 rm -r .config/lxsession/ 2>/dev/null
 if [ -f "/etc/cron.d/ddojo" ]; then
-	rm /etc/cron.d/ddojo
+	sudo rm /etc/cron.d/ddojo
 fi
 echo "Uninstall complete"
