@@ -6,9 +6,13 @@
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/
+/vendor/
 composer.phar
 ###< symfony/framework-bundle ###
 
 ###> symfony/web-server-bundle ###
 /.web-server-pid
 ###< symfony/web-server-bundle ###
+
+scripts/launch.pi.debug.sh
+migrations/current.migration
