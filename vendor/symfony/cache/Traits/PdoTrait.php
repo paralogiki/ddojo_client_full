@@ -11,12 +11,11 @@
 
 namespace Symfony\Component\Cache\Traits;
 
-use Doctrine\DBAL\Abstraction\Result;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
-use Doctrine\DBAL\Driver\Result as DriverResult;
 use Doctrine\DBAL\Driver\ServerInfoAwareConnection;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Schema\Schema;
 use Symfony\Component\Cache\Exception\InvalidArgumentException;
@@ -85,6 +84,7 @@ trait PdoTrait
      *
      * @throws \PDOException    When the table already exists
      * @throws DBALException    When the table already exists
+     * @throws Exception        When the table already exists
      * @throws \DomainException When an unsupported PDO driver is used
      */
     public function createTable()
@@ -113,7 +113,11 @@ trait PdoTrait
             $table->setPrimaryKey([$this->idCol]);
 
             foreach ($schema->toSql($conn->getDatabasePlatform()) as $sql) {
-                $conn->exec($sql);
+                if (method_exists($conn, 'executeStatement')) {
+                    $conn->executeStatement($sql);
+                } else {
+                    $conn->exec($sql);
+                }
             }
 
             return;
@@ -144,7 +148,11 @@ trait PdoTrait
                 throw new \DomainException(sprintf('Creating the cache table is currently not implemented for PDO driver "%s".', $this->driver));
         }
 
-        $conn->exec($sql);
+        if (method_exists($conn, 'executeStatement')) {
+            $conn->executeStatement($sql);
+        } else {
+            $conn->exec($sql);
+        }
     }
 
     /**
@@ -196,7 +204,7 @@ trait PdoTrait
         }
         $result = $stmt->execute();
 
-        if ($result instanceof Result) {
+        if (\is_object($result)) {
             $result = $result->iterateNumeric();
         } else {
             $stmt->setFetchMode(\PDO::FETCH_NUM);
@@ -235,7 +243,7 @@ trait PdoTrait
         $stmt->bindValue(':time', time(), \PDO::PARAM_INT);
         $result = $stmt->execute();
 
-        return (bool) ($result instanceof DriverResult ? $result->fetchOne() : $stmt->fetchColumn());
+        return (bool) (\is_object($result) ? $result->fetchOne() : $stmt->fetchColumn());
     }
 
     /**
@@ -256,7 +264,11 @@ trait PdoTrait
         }
 
         try {
-            $conn->exec($sql);
+            if (method_exists($conn, 'executeStatement')) {
+                $conn->executeStatement($sql);
+            } else {
+                $conn->exec($sql);
+            }
         } catch (TableNotFoundException $e) {
         } catch (\PDOException $e) {
         }
@@ -377,10 +389,10 @@ trait PdoTrait
                 }
                 $result = $stmt->execute();
             }
-            if (null === $driver && !($result instanceof DriverResult ? $result : $stmt)->rowCount()) {
+            if (null === $driver && !(\is_object($result) ? $result->rowCount() : $stmt->rowCount())) {
                 try {
                     $insertStmt->execute();
-                } catch (DBALException $e) {
+                } catch (DBALException | Exception $e) {
                 } catch (\PDOException $e) {
                     // A concurrent write won, let it be
                 }
@@ -410,25 +422,34 @@ trait PdoTrait
             if ($this->conn instanceof \PDO) {
                 $this->driver = $this->conn->getAttribute(\PDO::ATTR_DRIVER_NAME);
             } else {
-                switch ($this->driver = $this->conn->getDriver()->getName()) {
-                    case 'mysqli':
+                $driver = $this->conn->getDriver();
+
+                switch (true) {
+                    case $driver instanceof \Doctrine\DBAL\Driver\Mysqli\Driver:
                         throw new \LogicException(sprintf('The adapter "%s" does not support the mysqli driver, use pdo_mysql instead.', static::class));
-                    case 'pdo_mysql':
-                    case 'drizzle_pdo_mysql':
+                    case $driver instanceof \Doctrine\DBAL\Driver\AbstractMySQLDriver:
                         $this->driver = 'mysql';
                         break;
-                    case 'pdo_sqlite':
+                    case $driver instanceof \Doctrine\DBAL\Driver\PDOSqlite\Driver:
+                    case $driver instanceof \Doctrine\DBAL\Driver\PDO\SQLite\Driver:
                         $this->driver = 'sqlite';
                         break;
-                    case 'pdo_pgsql':
+                    case $driver instanceof \Doctrine\DBAL\Driver\PDOPgSql\Driver:
+                    case $driver instanceof \Doctrine\DBAL\Driver\PDO\PgSQL\Driver:
                         $this->driver = 'pgsql';
                         break;
-                    case 'oci8':
-                    case 'pdo_oracle':
+                    case $driver instanceof \Doctrine\DBAL\Driver\OCI8\Driver:
+                    case $driver instanceof \Doctrine\DBAL\Driver\PDOOracle\Driver:
+                    case $driver instanceof \Doctrine\DBAL\Driver\PDO\OCI\Driver:
                         $this->driver = 'oci';
                         break;
-                    case 'pdo_sqlsrv':
+                    case $driver instanceof \Doctrine\DBAL\Driver\SQLSrv\Driver:
+                    case $driver instanceof \Doctrine\DBAL\Driver\PDOSqlsrv\Driver:
+                    case $driver instanceof \Doctrine\DBAL\Driver\PDO\SQLSrv\Driver:
                         $this->driver = 'sqlsrv';
+                        break;
+                    default:
+                        $this->driver = \get_class($driver);
                         break;
                 }
             }
