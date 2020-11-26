@@ -62,7 +62,7 @@ class DdojoCrashCheckCommand extends Command
           $io->success('no FATAL found');
           die;
         }
-        $cmd = '/bin/grep -a FATAL ' . $logFile . ' | /bin/grep -v "ERROR:mmal_video_decoder" >> ' . $logReportFile;
+        $cmd = '/bin/grep -a FATAL ' . $logFile . ' | /bin/grep -av "ERROR:mmal_video_decoder" >> ' . $logReportFile;
         exec($cmd);
         # restart client via refresh
         putenv('DISPLAY=:0');

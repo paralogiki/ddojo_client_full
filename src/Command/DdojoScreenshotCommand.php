@@ -46,7 +46,6 @@ class DdojoScreenshotCommand extends Command
         $headers = 'X-AUTH-TOKEN: ' . $deviceConfig->getApiToken() . "\r\n";
         $headers .= 'Content-Type: multipart/form-data; boundary=' . $boundary;
         $ssFileContents = file_get_contents($ssFile);
-        #unlink($ssFile);
         $content  = '--' . $boundary . "\r\n" .
                     'Content-Disposition: form-data; name="uploadfile"; filename="ss.jpg"' . "\r\n" .
                     'Content-Type: image/jpeg' . "\r\n\r\n" .
@@ -70,6 +69,7 @@ class DdojoScreenshotCommand extends Command
             $contents = file_get_contents($uploadUrl, null, $resource_context);
         } catch (ErrorException $e) {
         }
+        unlink($ssFile);
         if (empty($contents)) {
           $io->error("Empty server response");
           return 0;
