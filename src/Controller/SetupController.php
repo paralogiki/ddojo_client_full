@@ -131,6 +131,13 @@ class SetupController extends AbstractController
                 $this->addFlash('success', 'Auto-Update has been disabled');
               }
             }
+            $crontabEtcCrashCheck = '/etc/cron.d/ddojocrashcheck';
+            if (!file_exists($crontabEtcCrashCheck)) {
+              $crontabFileCrashCheck = $this->getParameter('kernel.project_dir') . '/contrib/ddojocrashcheck.crontab';
+              if (file_exists($crontabFileCrashCheck)) {
+                exec('sudo cp ' . $crontabFileCrashCheck . ' ' . $crontabEtcCrashCheck);
+              }
+            }
             $allow_xset_new_settings = (int)($request->request->get('allow_xset') == 'on' ?? 0);
             $allow_xset_previous_settings = (int)($config['allow_xset'] ?? 0);
             $this->deviceConfig->setConfig(['allow_xset' => $allow_xset_new_settings]);

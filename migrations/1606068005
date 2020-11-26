@@ -1,0 +1,4 @@
+# install php-gd
+# no longer needed as we are using log files to detect crashes for now
+# /usr/bin/sudo /usr/bin/apt-get -y install php-gd
+/usr/bin/sudo /bin/cp /home/pi/ddojo_local/contrib/ddojocrashcheck.crontab /etc/cron.d/ddojocrashcheck
