@@ -41,4 +41,7 @@ rm -r .config/lxsession/ 2>/dev/null
 if [ -f "/etc/cron.d/ddojo" ]; then
 	sudo rm /etc/cron.d/ddojo
 fi
+if [ -f "/etc/cron.d/ddojocrashcheck" ]; then
+	sudo rm /etc/cron.d/ddojocrashcheck
+fi
 echo "Uninstall complete"

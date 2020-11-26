@@ -51,7 +51,8 @@ class DdojoCrashCheckCommand extends Command
           die;
         }
         # look for FATAL in log
-        $cmd = '/bin/grep FATAL ' . $logFile . ' | /usr/bin/wc -l';
+        # ignore FATAL from mmal_video_decoder
+        $cmd = '/bin/grep FATAL ' . $logFile . ' | /bin/grep -v "ERROR:mmal_video_decoder" | /usr/bin/wc -l';
         exec($cmd);
         $fatalCount = (int)exec($cmd);
         if (!$fatalCount) {
@@ -61,7 +62,7 @@ class DdojoCrashCheckCommand extends Command
           $io->success('no FATAL found');
           die;
         }
-        $cmd = '/bin/grep -a FATAL ' . $logFile . ' >> ' . $logReportFile;
+        $cmd = '/bin/grep -a FATAL ' . $logFile . ' | /bin/grep -v "ERROR:mmal_video_decoder" >> ' . $logReportFile;
         exec($cmd);
         # restart client via refresh
         putenv('DISPLAY=:0');
