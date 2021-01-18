@@ -58,7 +58,7 @@ class DdojoCrashCheckCommand extends Command
         $ignoreFile = $projectDir . '/contrib/ddojocrashcheck.ignore';
         $grepIgnore = '';
         if (file_exists($ignoreFile)) {
-          $grepIgnore = ' | /bin/grep -vf ' . $ignoreFile . ' ';
+          $grepIgnore = ' | /bin/grep -avf ' . $ignoreFile . ' ';
         }
         # look for FATAL in log
         # ignore FATAL from mmal_video_decoder
