@@ -1,3 +1,3 @@
 MAILTO=""
-#* * * * * pi /home/pi/ddojo_local/bin/console ddojo:crashcheck
+*/5 * * * * pi /home/pi/ddojo_local/bin/console ddojo:crashcheck
 #0 0 * * * pi /usr/bin/find /tmp -maxdepth 1 -daystart -ctime +30 -type f -name ddcc_*jpg | xargs -r /bin/rm

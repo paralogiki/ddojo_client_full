@@ -15,9 +15,13 @@ class DdojoCrashCheckCommand extends Command
 {
     protected static $defaultName = 'ddojo:crashcheck';
     private $params;
+    private $deviceConfig;
+    private $maxStrLen = 8192;
+    private $reportUrl = 'https://www.displaydojo.com/client/v1/report/error';
 
-    public function __construct(ParameterBagInterface $params) {
+    public function __construct(ParameterBagInterface $params, DeviceConfig $deviceConfig) {
       $this->params = $params;
+      $this->deviceConfig = $deviceConfig;
       parent::__construct();
     }
 
@@ -41,38 +45,51 @@ class DdojoCrashCheckCommand extends Command
           $io->success('chromium not running');
           die;
         }
-        $logReportFile = '/tmp/ddcc.report.log';
-        if (file_exists($logReportFile) && filesize($logReportFile) > 1000000) {
-          unlink($logReportFile);
-        }
+        #$logReportFile = '/tmp/ddcc.report.log';
+        #if (file_exists($logReportFile) && filesize($logReportFile) > 1000000) {
+        #  unlink($logReportFile);
+        #}
         $logFile = '/tmp/ddcc.log';
         if (!file_exists($logFile)) {
           $io->error('logFile not found');
           die;
         }
+        $projectDir = $this->params->get('kernel.project_dir');
+        $ignoreFile = $projectDir . '/contrib/ddojocrashcheck.ignore';
+        $grepIgnore = '';
+        if (file_exists($ignoreFile)) {
+          $grepIgnore = ' | /bin/grep -vf ' . $ignoreFile . ' ';
+        }
         # look for FATAL in log
         # ignore FATAL from mmal_video_decoder
-        $cmd = '/bin/grep FATAL ' . $logFile . ' | /bin/grep -v "ERROR:mmal_video_decoder" | /usr/bin/wc -l';
-        exec($cmd);
+        $cmd = '/bin/grep FATAL ' . $logFile . ' ' . $grepIgnore . ' | /usr/bin/wc -l';
         $fatalCount = (int)exec($cmd);
-        if (!$fatalCount) {
+        # look for ERROR in log
+        $cmd = '/bin/grep ERROR ' . $logFile . ' ' . $grepIgnore . ' | /usr/bin/wc -l';
+        $errorCount = (int)exec($cmd);
+        if (!$fatalCount && !$errorCount) {
           # clear log file for next run
           $cmd = '/bin/cat /dev/null > ' . $logFile;
           exec($cmd);
-          $io->success('no FATAL found');
+          $io->success('no FATAL or ERROR found');
           die;
         }
-        $cmd = '/bin/grep -a FATAL ' . $logFile . ' | /bin/grep -av "ERROR:mmal_video_decoder" >> ' . $logReportFile;
-        exec($cmd);
+        $fatalLines = [];
+        $cmd = '/bin/grep -a FATAL ' . $logFile . ' ' . $grepIgnore;
+        exec($cmd, $fatalLines);
+        $errorLines = [];
+        $cmd = '/bin/grep -a ERROR ' . $logFile . ' ' . $grepIgnore;
+        exec($cmd, $errorLines);
         # restart client via refresh
         putenv('DISPLAY=:0');
         # only restart if we have internet
-        $restartClient = $this->checkInternet();
+        $checkInternet = $this->checkInternet();
+        $restartClient = 0; // no restarting automaticall yet
+        $reportLog = 1;
         if ($restartClient) {
           # clear log for next run
           $cmd = '/bin/cat /dev/null > ' . $logFile;
           exec($cmd);
-          $projectDir = $this->params->get('kernel.project_dir');
           $relaunchScript = $projectDir . '/scripts/launch.pi.sh';
           if (!file_exists($relaunchScript)) {
             $io->error('unable to relaunch missing ' . $relaunchScript);
@@ -82,8 +99,66 @@ class DdojoCrashCheckCommand extends Command
           #$cmd = '/usr/bin/xdotool windowactivate --sync $(/usr/bin/xdotool search --onlyvisible --class chromium-browser | /usr/bin/tail -1) key F5';
           exec($cmd);
           $io->success('restarting client');
-        } else {
-          $io->error('wanted to restart but no internet');
+        }
+        if ($reportLog) {
+          if (!$this->deviceConfig->isSetup()) {
+            $io->error('wanted to reportLog but device is not setup');
+            die;
+          }
+          $postData = [
+            'displayId' => $this->deviceConfig->getDisplayId(),
+            'errorLines' => substr(implode("\n", $errorLines), 0, $this->maxStrLen),
+            'fatalLines' => substr(implode("\n", $fatalLines), 0, $this->maxStrLen),
+          ];
+          $projectDir = $this->params->get('kernel.project_dir');
+          $screenShotCmd = $projectDir . '/bin/console ddojo:screenshot';
+          $screenShotLines = [];
+          exec($screenShotCmd, $screenShotLines);
+          $screenShotUrl = '';
+          foreach ($screenShotLines as $line) {
+            $matches = [];
+            if (preg_match('/^ \[OK\] URL=(.*)$/', $line, $matches)) {
+              $screenShotUrl = $matches[1];
+            }
+          }
+          $postData['screenShotUrl'] = $screenShotUrl;
+          $opts = [
+              'http' => [
+                'header' => [
+                  'X-AUTH-TOKEN: ' . $this->deviceConfig->getApiToken(),
+                  'Content-type: application/x-www-form-urlencoded',
+                ],
+                'method' => 'POST',
+                'content' => http_build_query($postData),
+              ]
+          ];
+          $resource_context = stream_context_create($opts);
+          $contents = '';
+          try {
+              $contents = file_get_contents($this->reportUrl, null, $resource_context);
+          } catch (ErrorException $e) {
+          }
+          if (empty($contents)) {
+            $io->error('Failed to report error to ' . $this->reportUrl);
+            die;
+          }
+          $response = json_decode($contents, true);
+          if ($response === null) {
+            $io->error("unexpected response");
+            die;
+          }
+          if (!isset($response['status'])) {
+            $io->error("response has no status");
+            die;
+          }
+          if ($response['status'] == 'success') {
+            # clear log for next run
+            $cmd = '/bin/cat /dev/null > ' . $logFile;
+            exec($cmd);
+            $io->success('reported error to server');
+          } else {
+            $io->error("status is not success, message = " . $response['message'] ?? 'no message');
+          }
         }
     }
 
