@@ -55,30 +55,27 @@ class DdojoCrashCheckCommand extends Command
           die;
         }
         $projectDir = $this->params->get('kernel.project_dir');
+        $grepFile = $projectDir . '/contrib/ddojocrashcheck.grep';
         $ignoreFile = $projectDir . '/contrib/ddojocrashcheck.ignore';
-        $grepIgnore = '';
-        if (file_exists($ignoreFile)) {
-          $grepIgnore = ' | /bin/grep -avf ' . $ignoreFile . ' ';
+        if (!file_exists($grepFile)) {
+          $io->error('missing file = ' . $grepFile);
+          die;
         }
-        # look for FATAL in log
-        # ignore FATAL from mmal_video_decoder
-        $cmd = '/bin/grep FATAL ' . $logFile . ' ' . $grepIgnore . ' | /usr/bin/wc -l';
-        $fatalCount = (int)exec($cmd);
-        # look for ERROR in log
-        $cmd = '/bin/grep ERROR ' . $logFile . ' ' . $grepIgnore . ' | /usr/bin/wc -l';
+        if (!file_exists($ignoreFile)) {
+          $io->error('missing file = ' . $ignoreFile);
+          die;
+        }
+        $cmd = '/bin/grep -af ' . $grepFile . ' ' . $logFile . ' | /bin/grep -avf ' . $ignoreFile . ' | /usr/bin/wc -l';
         $errorCount = (int)exec($cmd);
-        if (!$fatalCount && !$errorCount) {
+        if (!$errorCount) {
           # clear log file for next run
           $cmd = '/bin/cat /dev/null > ' . $logFile;
           exec($cmd);
-          $io->success('no FATAL or ERROR found');
+          $io->success('no errors found');
           die;
         }
-        $fatalLines = [];
-        $cmd = '/bin/grep -a FATAL ' . $logFile . ' ' . $grepIgnore;
-        exec($cmd, $fatalLines);
         $errorLines = [];
-        $cmd = '/bin/grep -a ERROR ' . $logFile . ' ' . $grepIgnore;
+        $cmd = '/bin/grep -af ' . $grepFile . ' ' . $logFile . ' | /bin/grep -avf ' . $ignoreFile;
         exec($cmd, $errorLines);
         # restart client via refresh
         putenv('DISPLAY=:0');
@@ -108,7 +105,6 @@ class DdojoCrashCheckCommand extends Command
           $postData = [
             'displayId' => $this->deviceConfig->getDisplayId(),
             'errorLines' => substr(implode("\n", $errorLines), 0, $this->maxStrLen),
-            'fatalLines' => substr(implode("\n", $fatalLines), 0, $this->maxStrLen),
           ];
           $projectDir = $this->params->get('kernel.project_dir');
           $screenShotCmd = $projectDir . '/bin/console ddojo:screenshot';
