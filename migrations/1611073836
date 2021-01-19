@@ -1,0 +1,2 @@
+# copy new version
+/usr/bin/sudo /bin/cp /home/pi/ddojo_local/contrib/ddojocrashcheck.crontab /etc/cron.d/ddojocrashcheck

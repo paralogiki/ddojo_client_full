@@ -65,18 +65,20 @@ class DdojoCrashCheckCommand extends Command
           $io->error('missing file = ' . $ignoreFile);
           die;
         }
-        $cmd = '/bin/grep -af ' . $grepFile . ' ' . $logFile . ' | /bin/grep -avf ' . $ignoreFile . ' | /usr/bin/wc -l';
-        $errorCount = (int)exec($cmd);
-        if (!$errorCount) {
-          # clear log file for next run
-          $cmd = '/bin/cat /dev/null > ' . $logFile;
-          exec($cmd);
-          $io->success('no errors found');
-          die;
-        }
         $errorLines = [];
         $cmd = '/bin/grep -af ' . $grepFile . ' ' . $logFile . ' | /bin/grep -avf ' . $ignoreFile;
         exec($cmd, $errorLines);
+        $tmpLines = [];
+        foreach($errorLines as $line) {
+          $line = trim($line);
+          if (empty($line)) continue;
+          $tmpLines[] = $line;
+        }
+        if (!count($tmpLines)) {
+          $io->error('tmpLines was size 0');
+          die;
+        }
+        $errorLines = $tmpLines;
         # restart client via refresh
         putenv('DISPLAY=:0');
         # only restart if we have internet
