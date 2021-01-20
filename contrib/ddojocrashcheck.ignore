@@ -1,3 +1,6 @@
 Failed to call method: org.freedesktop
 ERROR:mmal_video_decoder
 Failed to connect to the bus
+ERROR:gl_surface_presentation_helper
+ERROR:batching_media_log
+ERROR:ssl_client_socket_impl
