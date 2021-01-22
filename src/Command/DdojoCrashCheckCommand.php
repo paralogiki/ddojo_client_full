@@ -17,6 +17,8 @@ class DdojoCrashCheckCommand extends Command
     private $params;
     private $deviceConfig;
     private $maxStrLen = 8192;
+    private $maxLogSize = 1048576;
+    private $logFile = '/tmp/ddcc.log';
     private $reportUrl = 'https://www.displaydojo.com/client/v1/report/error';
 
     public function __construct(ParameterBagInterface $params, DeviceConfig $deviceConfig) {
@@ -49,8 +51,7 @@ class DdojoCrashCheckCommand extends Command
         #if (file_exists($logReportFile) && filesize($logReportFile) > 1000000) {
         #  unlink($logReportFile);
         #}
-        $logFile = '/tmp/ddcc.log';
-        if (!file_exists($logFile)) {
+        if (!file_exists($this->logFile)) {
           $io->error('logFile not found');
           die;
         }
@@ -66,7 +67,7 @@ class DdojoCrashCheckCommand extends Command
           die;
         }
         $errorLines = [];
-        $cmd = '/bin/grep -af ' . $grepFile . ' ' . $logFile . ' | /bin/grep -avf ' . $ignoreFile;
+        $cmd = '/bin/grep -af ' . $grepFile . ' ' . $this->logFile . ' | /bin/grep -avf ' . $ignoreFile;
         exec($cmd, $errorLines);
         $tmpLines = [];
         foreach($errorLines as $line) {
@@ -76,6 +77,7 @@ class DdojoCrashCheckCommand extends Command
         }
         if (!count($tmpLines)) {
           $io->error('tmpLines was size 0');
+          $this->checkLogSize();
           die;
         }
         $errorLines = $tmpLines;
@@ -87,7 +89,7 @@ class DdojoCrashCheckCommand extends Command
         $reportLog = 1;
         if ($restartClient) {
           # clear log for next run
-          $cmd = '/bin/cat /dev/null > ' . $logFile;
+          $cmd = '/bin/cat /dev/null > ' . $this->logFile;
           exec($cmd);
           $relaunchScript = $projectDir . '/scripts/launch.pi.sh';
           if (!file_exists($relaunchScript)) {
@@ -104,6 +106,16 @@ class DdojoCrashCheckCommand extends Command
             $io->error('wanted to reportLog but device is not setup');
             die;
           }
+          $chromiumVersion = exec('/usr/bin/chromium-browser --version');
+          array_unshift($errorLines, '----');
+          if (!empty($chromiumVersion)) {
+            $chromiumVersion = 'Chromium version: ' . $chromiumVersion;
+          } else {
+            $chromiumVersion = 'Chromium version: unknown';
+          }
+          array_unshift($errorLines, $chromiumVersion);
+          $ddojoClientVersion = 'DDOJO Client Version: v' . $this->params->get('app.clientVersion');
+          array_unshift($errorLines, $ddojoClientVersion);
           $postData = [
             'displayId' => $this->deviceConfig->getDisplayId(),
             'errorLines' => substr(implode("\n", $errorLines), 0, $this->maxStrLen),
@@ -151,7 +163,7 @@ class DdojoCrashCheckCommand extends Command
           }
           if ($response['status'] == 'success') {
             # clear log for next run
-            $cmd = '/bin/cat /dev/null > ' . $logFile;
+            $cmd = '/bin/cat /dev/null > ' . $this->logFile;
             exec($cmd);
             $io->success('reported error to server');
           } else {
@@ -258,6 +270,13 @@ class DdojoCrashCheckCommand extends Command
 
     private function logToFile($logFile, $string) {
       file_put_contents($logFile, date('Y-m-d H:i:s') . ' ' . $string . PHP_EOL, FILE_APPEND);
+    }
+
+    private function checkLogSize() {
+      if (file_exists($this->logFile) && filesize($this->logFile) > $this->maxLogSize) {
+        $cmd = '/bin/cat /dev/null > ' . $logFile;
+        exec($cmd);
+      }
     }
 
 }
