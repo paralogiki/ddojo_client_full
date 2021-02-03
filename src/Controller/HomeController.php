@@ -72,8 +72,11 @@ class HomeController extends AbstractController
             # Don't need xdotool anymore already launching in full screen
             #exec('xdotool windowactivate --sync $(xdotool search --onlyvisible --class chromium-browser | tail -1) key F11');
             # Disable screen going black and screen turn off
+            putenv('DISPLAY=:0');
             exec('xset s noblank');
+            exec('xset s noexposure');
             exec('xset s off');
+            exec('xset s 0 0');
             # Disable Energy Star which would also turn off screen
             exec('xset -dpms');
         }

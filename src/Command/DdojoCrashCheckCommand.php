@@ -67,6 +67,15 @@ class DdojoCrashCheckCommand extends Command
           die;
         }
         $errorLines = [];
+        $hasGray = false;
+        $grayResults = 0;
+        if (function_exists('imagecreatefromjpeg')) {
+          $grayResults = $this->checkForGray();
+          if ($grayResults !== false) {
+            $hasGray = true;
+            $errorLines[] = "ERROR:Display has gray pixels ratio over threshold, percentage = " . round($grayResults * 100, 2) . '%';
+          }
+        }
         $cmd = '/bin/grep -af ' . $grepFile . ' ' . $this->logFile . ' | /bin/grep -avf ' . $ignoreFile;
         exec($cmd, $errorLines);
         $tmpLines = [];
@@ -76,7 +85,7 @@ class DdojoCrashCheckCommand extends Command
           $tmpLines[] = $line;
         }
         if (!count($tmpLines)) {
-          $io->error('tmpLines was size 0');
+          $io->success('tmpLines was size 0');
           $this->checkLogSize();
           die;
         }
@@ -178,6 +187,50 @@ class DdojoCrashCheckCommand extends Command
       $output = null;
       $result = exec($cmd, $output, $returnVar);
       return $returnVar === 0;
+    }
+
+    private function checkForGray() {
+      $deviceConfig = new DeviceConfig();
+      if (!$deviceConfig->isSetup()) {
+        return false;
+      }
+      $displayId = (int)$deviceConfig->getDisplayId();
+      putenv('DISPLAY=:0');
+      $ssFile = '/tmp/' . time() . '-' . $displayId . '.jpg';
+      $cmd = exec('/usr/bin/scrot ' . $ssFile);
+      if (!file_exists($ssFile)) {
+        return false;
+      }
+      $image = imagecreatefromjpeg($ssFile);
+      if ($image === false) {
+        if (file_exists($ssFile)) unlink($ssFile);
+        return false;
+      }
+      $w = imagesx($image);
+      $h = imagesy($image);
+      $colors = [];
+      $totalPixels = 0;
+      for ($x = 0; $x < $w; $x += 1) {
+        for ($y = 0; $y < $h; $y += 1) {
+          $rgb = imagecolorat($image, $x, $y);
+          if (!isset($colors[$rgb])) $colors[$rgb] = 0;
+          $colors[$rgb] += 1;
+          $totalPixels++;
+        }
+      }
+      $badColor = 8947848; # dark gray
+      $threshHold = 0.1;
+      $absMax = 200;
+      $totalHits = 0;
+      foreach ($colors as $color => $count) {
+        $diff = abs($color - $badColor);
+        if ($diff > $absMax) continue;
+        $totalHits += $count;
+      }
+      $ratio = $totalHits / $totalPixels;
+      if (file_exists($ssFile)) unlink($ssFile);
+      if ($ratio >= $threshHold) return $ratio;
+      return false;
     }
 
     private function checkForIcons($ssFile, $verbose = 0) {
