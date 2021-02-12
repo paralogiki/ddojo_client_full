@@ -69,11 +69,14 @@ class DdojoCrashCheckCommand extends Command
         $errorLines = [];
         $hasGray = false;
         $grayResults = 0;
+        $restartBecauseOfGray = 0;
         if (function_exists('imagecreatefromjpeg')) {
           $grayResults = $this->checkForGray();
           if ($grayResults !== false) {
             $hasGray = true;
             $errorLines[] = "ERROR:Display has gray pixels ratio over threshold, percentage = " . round($grayResults * 100, 2) . '%';
+            $errorLines[] = "FATAL:Display has has been restarted automatically";
+            $restartBecauseOfGray = 1;
           }
         }
         $cmd = '/bin/grep -af ' . $grepFile . ' ' . $this->logFile . ' | /bin/grep -avf ' . $ignoreFile;
@@ -94,22 +97,9 @@ class DdojoCrashCheckCommand extends Command
         putenv('DISPLAY=:0');
         # only restart if we have internet
         $checkInternet = $this->checkInternet();
-        $restartClient = 0; // no restarting automaticall yet
+        $restartClient = 0; // no restarting automatically yet
+        if ($restartBecauseOfGray && $checkInternet) $restartClient = 1;
         $reportLog = 1;
-        if ($restartClient) {
-          # clear log for next run
-          $cmd = '/bin/cat /dev/null > ' . $this->logFile;
-          exec($cmd);
-          $relaunchScript = $projectDir . '/scripts/launch.pi.sh';
-          if (!file_exists($relaunchScript)) {
-            $io->error('unable to relaunch missing ' . $relaunchScript);
-            die;
-          }
-          $cmd = $relaunchScript . ' > /dev/null 2>&1 &';
-          #$cmd = '/usr/bin/xdotool windowactivate --sync $(/usr/bin/xdotool search --onlyvisible --class chromium-browser | /usr/bin/tail -1) key F5';
-          exec($cmd);
-          $io->success('restarting client');
-        }
         if ($reportLog) {
           if (!$this->deviceConfig->isSetup()) {
             $io->error('wanted to reportLog but device is not setup');
@@ -179,6 +169,20 @@ class DdojoCrashCheckCommand extends Command
             $io->error("status is not success, message = " . $response['message'] ?? 'no message');
           }
         }
+        if ($restartClient) {
+          # clear log for next run
+          $cmd = '/bin/cat /dev/null > ' . $this->logFile;
+          exec($cmd);
+          $relaunchScript = $projectDir . '/scripts/launch.pi.sh';
+          if (!file_exists($relaunchScript)) {
+            $io->error('unable to relaunch missing ' . $relaunchScript);
+            die;
+          }
+          $cmd = $relaunchScript . ' > /dev/null 2>&1 &';
+          #$cmd = '/usr/bin/xdotool windowactivate --sync $(/usr/bin/xdotool search --onlyvisible --class chromium-browser | /usr/bin/tail -1) key F5';
+          exec($cmd);
+          $io->success('restarting client');
+        }
     }
 
     private function checkInternet() {
@@ -218,14 +222,18 @@ class DdojoCrashCheckCommand extends Command
           $totalPixels++;
         }
       }
-      $badColor = 8947848; # dark gray
+      //arsort($colors); # only needed for debuging
+      $badColorGray = 8947848; # dark gray
+      $badColorLightGray = 15658734; # light gray
       $threshHold = 0.1;
       $absMax = 200;
       $totalHits = 0;
       foreach ($colors as $color => $count) {
-        $diff = abs($color - $badColor);
-        if ($diff > $absMax) continue;
-        $totalHits += $count;
+        $diff1 = abs($color - $badColorGray);
+        $diff2 = abs($color - $badColorLightGray);
+        if ($diff1 < $absMax || $diff2 < $absMax) {
+          $totalHits += $count;
+        }
       }
       $ratio = $totalHits / $totalPixels;
       if (file_exists($ssFile)) unlink($ssFile);
