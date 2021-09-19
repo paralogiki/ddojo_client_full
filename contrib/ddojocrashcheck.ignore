@@ -4,3 +4,9 @@ Failed to connect to the bus
 ERROR:gl_surface_presentation_helper
 ERROR:batching_media_log
 ERROR:ssl_client_socket_impl
+ERROR:gcm_channel_status_request
+for global.ib-ibi.com
+Calculated bogus refresh interval
+ERROR: Time is after notAfter
+ERROR:cast_crl
+ERROR:cert_verify_proc_nss

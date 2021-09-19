@@ -223,15 +223,17 @@ class DdojoCrashCheckCommand extends Command
         }
       }
       //arsort($colors); # only needed for debuging
-      $badColorGray = 8947848; # dark gray
-      $badColorLightGray = 15658734; # light gray
+      $badColorGray = 8947848; # dark gray #8a8a8a
+      $badColorLightGray = 15658734; # light gray #eeeeee
+      $badColorLightGray2 = 14540253; # light gray #dddddd
       $threshHold = 0.1;
       $absMax = 200;
       $totalHits = 0;
       foreach ($colors as $color => $count) {
         $diff1 = abs($color - $badColorGray);
         $diff2 = abs($color - $badColorLightGray);
-        if ($diff1 < $absMax || $diff2 < $absMax) {
+        $diff3 = abs($color - $badColorLightGray2);
+        if ($diff1 < $absMax || $diff2 < $absMax || $diff3 < $absMax) {
           $totalHits += $count;
         }
       }
