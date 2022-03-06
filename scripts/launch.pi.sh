@@ -7,12 +7,14 @@ fi
 source /etc/os-release
 DD_CHROMIUM="/usr/bin/chromium-browser"
 DD_KILL_CHROMIUM_GREP="chromium-browser"
-if [ "$ID" == "arch" ]; then
-	DD_CHROMIUM="/usr/bin/chromium"
-	DD_KILL_CHROMIUM_GREP="chromium"
-elif [ "$ID" == "debian" ]; then
-	DD_CHROMIUM="/usr/bin/chromium"
-	DD_KILL_CHROMIUM_GREP="chromium"
+if [ ! -f "$DD_CHROMIUM" ]; then
+	if [ -f "/usr/bin/chromium" ]; then
+		DD_CHROMIUM="/usr/bin/chromium"
+		DD_KILL_CHROMIUM_GREP="chromium"
+	else
+		echo "ERROR: Cannot find chromium-browser or chromium in path"
+		exit
+	fi
 fi
 # kill any active client local site code
 pkill -f "127.0.0.1:8000.*ddojo"

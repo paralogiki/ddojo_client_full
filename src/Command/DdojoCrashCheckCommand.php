@@ -223,7 +223,7 @@ class DdojoCrashCheckCommand extends Command
         }
       }
       //arsort($colors); # only needed for debuging
-      $badColorGray = 8947848; # dark gray #8a8a8a
+      $badColorGray = 8947848; # dark gray #888888
       $badColorLightGray = 15658734; # light gray #eeeeee
       $badColorLightGray2 = 14540253; # light gray #dddddd
       $threshHold = 0.1;

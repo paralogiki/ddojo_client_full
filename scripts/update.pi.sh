@@ -13,6 +13,11 @@ if [ "$newUpdatesAvailable" != "" ]; then
 	git reset --hard origin/master
 	echo "Updates applied"
 	~/ddojo_local/bin/console ddojo:migrate
+	# We sleep here because of update storms, if every display restarts at the
+	# same time, server can get overwhelmed, so we reset at a random time
+	# between 1s and 30m
+	sleepTime=`shuf -n1 -i1-1800`
+	sleep $sleepTime
 	if [ $rebootAfter -eq 1 ]; then
 		echo "Rebooting ..."
 		sudo shutdown -t 0 0 -r
