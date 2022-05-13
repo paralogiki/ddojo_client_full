@@ -1,0 +1,2 @@
+# install php-gd
+/usr/bin/sudo /usr/bin/apt-get -qy install php-gd >> /tmp/ddcc.log 2>&1
