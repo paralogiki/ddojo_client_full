@@ -81,7 +81,7 @@ class HomeController extends AbstractController
             exec('xset -dpms');
         }
         # Inject socket.io client
-        $contents = str_replace('</body>', "<script>var _roomName = '" . $config['display_key'] . "';</script>\n" . '<script src="https://www.displaydojo.com:3000/socket.io/socket.io.js"></script><script src="https://www.displaydojo.com:3000/client.js"></script>', $contents);
+        $contents = str_replace('</body>', "<script>var _roomName = '" . $config['display_key'] . "';</script>\n" . '<script src="https://www.displaydojo.com:8443/socket.io/socket.io.js"></script><script src="https://www.displaydojo.com:8443/client.js"></script>', $contents);
         return new Response($contents);
     }
 
